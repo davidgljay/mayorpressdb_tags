@@ -30,6 +30,9 @@ var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
 	}
 */
 
+//TODO:Scan for 1000 urls without the tag_complete:true property.
+//TODO: After successful completion, set the tag_complete:true property.
+
 module.exports.handler = function(event, context) {
 	var promise_array=[];
 
