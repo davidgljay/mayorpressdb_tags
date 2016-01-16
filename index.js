@@ -2,9 +2,11 @@ var AlchemyAPI = require('alchemy-api'),
 Promise = require('promise'),
 format_tags = require('./format_tags'),
 dynamodb = require('./api/dynamo'),
-logger = require('logger'),
+logger = require('./utils/logger'),
 // config = require('./config'),
-get_releases = quire('./get_releases');var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
+get_releases = require('./get_releases');
+
+var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
 
 /*
 * Takes a stream of press releases and uses IBM's AlchemyAPI to identify their topics an any people mentioned. 
@@ -46,7 +48,7 @@ get_releases(10)
 
 				//Then update the tags table with the results
 				.then(function(results) {
-					logger.info('Got results from alchemy')
+					logger.info('Got results from alchemy');
 					var tagged_article = {
 						taxonomy:results[0].taxonomy,
 						entities:results[1].entities,
@@ -54,14 +56,14 @@ get_releases(10)
 					};
 					dynamodb.batch_update(format_tags(article))
 						.then(function() {
-							logger.info('Posted batch update to tag db.')
+							logger.info('Posted batch update to tag db.');
 							return tagged_article;
 						});
 				})
 
 				//Then update the article and store the alchemy results, just in case we need them later.
 				.then(function(tagged_article) {
-					logger.info('Updating tagged_article')
+					logger.info('Updating tagged_article');
 					return dynamodb.update(get_releases.update_tagged());
 				})
 			);
@@ -75,12 +77,7 @@ get_releases(10)
 			function(err) {
 				logger.error(err);
 			});		
-	})
-
-
-
-var format_and_post = ;
-
+	});
 
 //Function which returns a promise to deliver a list of tags in an array.
 var get_alchemy = function(url, operation) {

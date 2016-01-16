@@ -113,7 +113,7 @@ var put_params = function(items) {
 };
 
 module.exports.scan = function(params) {
-	  return new Promise(resolve, reject, function() {
+	  return new Promise(function(resolve, reject) {
 	  	dynamodb.scan(params, function(err, data) {
 	  		if (err) reject(err);
 	  		else resolve(data);

@@ -3,7 +3,8 @@ var dynamo = require('./api/dynamo');
 //Gets 1000 urls from dynamoDB where tagged = false;
 
 module.exports = function(numurls) {
-	return dynamo.scan(params(numurls)).then(dedynoify);
+	console.log("getting releasees");
+	return dynamo.scan(scan_params(numurls)).then(dedynoify);
 };
 
 var scan_params = module.exports.scan_params =  function(numurls) {
