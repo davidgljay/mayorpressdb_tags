@@ -45,6 +45,7 @@ get_releases(10)
 
 				//Then update the tags table with the results
 				.then(function(results) {
+					logger.info('Got results from alchemy')
 					var tagged_article = {
 						taxonomy:results[0].taxonomy,
 						entities:results[1].entities,
@@ -52,12 +53,14 @@ get_releases(10)
 					};
 					dynamodb.batch_update(format_tags(article))
 						.then(function() {
+							logger.info('Posted batch update to tag db.')
 							return tagged_article;
 						});
 				})
 
 				//Then update the article and store the alchemy results, just in case we need them later.
 				.then(function(tagged_article) {
+					logger.info('Updating tagged_article')
 					return dynamodb.update(get_releases.update_tagged());
 				})
 			);
