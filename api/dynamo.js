@@ -9,27 +9,42 @@ Promise = require('promise');
 
 var dynamodb = this.dynamodb = new AWS.DynamoDB({apiVersion: '2015-02-02'});
 
+//Don't post more frequently than X milliseconds;
+var throttle = 100,
+last_call=0;
+var get_throttle = function() {
+	var current_time = new Date().getTime();
+	var since_last_call = current_time - last_call;
+	last_call = current_time;
+	if (since_last_call < throttle) {
+		return throttle - since_last_call;
+	} else {
+		return 0;
+	}
+}
 
 //Updates a single item in DynamoDB. Assumes that integers and arrays are added rather than updated.
 
-module.exports.update = function(itek) {
+module.exports.update = function(item) {
 	return new Promise(function(resolve, reject) {
-		dynamodb.updateItem({
-			TableName:item.table,
-			Key:item.key,
-			ReturnValues:'NONE',
-			ReturnItemCollectionMetrics:'NONE',
-			ReturnConsumedCapacity: 'NONE',
-			ExpressionAttributeValues: item.values,
-			UpdateExpression: item.update_expression
-		},
-		function(err, data) {
-			if (err) {
-				reject("Error updating DynamoDB:\n" + err);
-			} else {
-				resolve(data);
-			}
-		});
+		setTimeout(function() {
+			dynamodb.updateItem({
+				TableName:item.table,
+				Key:item.key,
+				ReturnValues:'NONE',
+				ReturnItemCollectionMetrics:'NONE',
+				ReturnConsumedCapacity: 'NONE',
+				ExpressionAttributeValues: item.values,
+				UpdateExpression: item.update_expression
+			},
+			function(err, data) {
+				if (err) {
+					reject("Error updating DynamoDB:\n" + err);
+				} else {
+					resolve(data);
+				}
+			});
+		}, get_throttle());
 	});
 };
 
@@ -55,15 +70,17 @@ module.exports.post = function(items) {
 			resolve();
 			return;
 		}
-		dynamodb.batchWriteItem(formatted_items, function(err, response) {
-			if (err) {
-				logger.error("Error posting item to dynamo:" + err);
-				reject(err);
-			} else {
-				logger.info("Item post to dynamo successful\n" + JSON.stringify(response));
-				resolve();
-			}
-		});			
+		setTimeout(function() {
+			dynamodb.batchWriteItem(formatted_items, function(err, response) {
+				if (err) {
+					logger.error("Error posting item to dynamo:" + err);
+					reject(err);
+				} else {
+					logger.info("Item post to dynamo successful\n" + JSON.stringify(response));
+					resolve();
+				}
+			});	
+		},get_throttle);
 	});
 };
 
@@ -95,8 +112,11 @@ var put_params = function(items) {
 
 };
 
-var scan = function(params) {
-	  TableName: scan_table, /* required */
-  		AttributesToGet: attr_to_get,
-  Con
-}
+module.exports.scan = function(params) {
+	  return new Promise(resolve, reject) {
+	  	dynamodb.scan(params, function(err, data) {
+	  		if (err) reject(err);
+	  		else resolve(data);s
+	  	});
+	  };
+};
