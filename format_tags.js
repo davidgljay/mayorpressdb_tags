@@ -57,8 +57,8 @@
 * Each word for which "confident" is not marked "no" should be included as a tag.
 */
 module.exports = function(alchemy_response) {
-	var tag_list = get_tag_list(alchemy_response[0].taxonomy),
-	people_list = get_people_list(alchemy_response[1].entities),
+	var tag_list = get_tag_list(alchemy_response.taxonomy),
+	people_list = get_people_list(alchemy_response.entities),
 	tags = [];
 	for (var i = tag_list.length - 1; i >= 0; i--) {
 		var update_expression = {
@@ -98,20 +98,20 @@ module.exports = function(alchemy_response) {
 		}
 
 		//Add cross-tags by city
-		for (var j = tag_list.length - 1; j >= 0; j--) {
-			if (j==i) {
+		for (var k = tag_list.length - 1; k >= 0; k--) {
+			if (k==i) {
 				continue;
 			}
-			var tag_id = "_" + city + "_" + tag_list[j];
+			var tag_id = "_" + city + "_" + tag_list[k];
 			new_tag[':tag_name' + tag_id] = {S:tag_id};
 			update_expression.set.push(':tag_name' + tag_id);
 
 			new_tag[':tag_articles' + tag_id] = {L:[alchemy_response.article_info]};
 			update_expression.list_append.push(':tag_articles' + tag_id);
-		};
+		}
 
 		tags.push({
-			table:process.env.TABLE_NAME,
+			table:process.env.TAGS_DB,
 			key:{tag:{S:tag_list[i]}},
 			values:new_tag,
 			update_expression:format_update_expression(update_expression)
@@ -122,39 +122,45 @@ module.exports = function(alchemy_response) {
 
 
 //Get list of tags from the Alchemy taxonomy response 
-var get_tag_list = function(alchemy_tags) {
-	var tag_list = [];
-	for (var i = alchemy_tags.length - 1; i >= 0; i--) {
+var get_tag_list = module.exports.get_tag_list = function(alchemy_tags) {
+	var tag_list = new Set();
+	for (var i = 0; i < alchemy_tags.length ; i++) {
 		if (alchemy_tags[i].confident == 'no') {
 			continue;
 		}
 		var labels = alchemy_tags[i].label.split('/').slice(1);
 		for (var j = labels.length - 1; j >= 0; j--) {
-			tag_list.push(labels[j]);
+			tag_list.add(labels[j]);
 		}
 	}
-	return tag_list;
+	return Array.from(tag_list);
 };
 
 //Get list of people. from Alchemy entities response
-var get_people_list = function(alchemy_entities) {
+var get_people_list = module.exports.get_people_list = function(alchemy_entities) {
 	var people_list = [];
 	for (var i = alchemy_entities.length - 1; i >= 0; i--) {
 		if (alchemy_entities[i].type=="Person") {
 			var name = alchemy_entities[i].text;
-			if (alchemy_entities[i].disambiguated && alchemy_entities[i].disambiguated.name) {
-				name = alchemy_entities[i].disambiguated.name;
+			if (alchemy_entities[i].disambiguated) {
+				if (alchemy_entities[i].disambiguated.name) {
+					name = alchemy_entities[i].disambiguated.name;
+				}
+				people_list.push({
+					name:name,
+					details:alchemy_entities[i].disambiguated
+				});
+			} else {
+				people_list.push({
+					name:name
+				});
 			}
-			people_list.push({
-				name:name,
-				details:disambiguated
-			});
 		}
 	}
 	return people_list;
 };
 
-var format_update_expression = function(update_expression) {
+var format_update_expression = module.exports.format_update_expression = function(update_expression) {
 	//Add ADD expressions
 	var formatted = 'ADD';
 	for (var i = update_expression.add.length - 1; i >= 0; i--) {
@@ -163,11 +169,10 @@ var format_update_expression = function(update_expression) {
 
 	//Remove trailing comma.
 	formatted = formatted.slice(0,-1);
-
 	//Add SET expressions
 	formatted += ' SET';
 	for (var j = update_expression.set.length - 1; j >= 0; j--) {
-		formatted += ' ' + update_expression.set[j].slice(1) + '= if_not_exists(' + 
+		formatted += ' ' + update_expression.set[j].slice(1) + '=if_not_exists(' + 
 		update_expression.set[j].slice(1) + ', ' + update_expression.set[j] + '),';
 	}
 	//Add list_append expressions

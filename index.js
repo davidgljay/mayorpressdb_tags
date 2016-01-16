@@ -2,6 +2,7 @@ var AlchemyAPI = require('alchemy-api'),
 Promise = require('promise'),
 format_tags = require('./format_tags'),
 dynamodb = require('./api/dynamo'),
+logger = require('logger'),
 // config = require('./config'),
 get_releases = quire('./get_releases');var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
 
