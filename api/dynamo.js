@@ -12,11 +12,11 @@ var dynamodb = this.dynamodb = new AWS.DynamoDB({apiVersion: '2015-02-02'});
 
 //Updates a single item in DynamoDB. Assumes that integers and arrays are added rather than updated.
 
-module.exports.update = function(item) {
+module.exports.update = function(itek) {
 	return new Promise(function(resolve, reject) {
 		dynamodb.updateItem({
-			TableName:process.env.TABLE_NAME,
-			Key:{tag:item.vals[":tag"]},
+			TableName:item.table,
+			Key:item.key,
 			ReturnValues:'NONE',
 			ReturnItemCollectionMetrics:'NONE',
 			ReturnConsumedCapacity: 'NONE',
@@ -94,3 +94,9 @@ var put_params = function(items) {
 	}
 
 };
+
+var scan = function(params) {
+	  TableName: scan_table, /* required */
+  		AttributesToGet: attr_to_get,
+  Con
+}

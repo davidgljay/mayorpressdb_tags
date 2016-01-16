@@ -68,7 +68,6 @@ module.exports = function(alchemy_response) {
 		};
 		//Add core tag info
 		var new_tag = {
-			':tag':{S:tag_list[i]},
 			':tag_count':{N:1},
 			':dates':{NN:[alchemy_response.article_info.date]},
 			':articles':{L:[alchemy_response.article_info]},
@@ -112,6 +111,8 @@ module.exports = function(alchemy_response) {
 		};
 
 		tags.push({
+			table:process.env.TABLE_NAME,
+			key:{tag:{S:tag_list[i]}},
 			values:new_tag,
 			update_expression:format_update_expression(update_expression)
 		});
