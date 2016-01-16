@@ -21,7 +21,7 @@ var get_throttle = function() {
 	} else {
 		return 0;
 	}
-}
+};
 
 //Updates a single item in DynamoDB. Assumes that integers and arrays are added rather than updated.
 
@@ -113,10 +113,10 @@ var put_params = function(items) {
 };
 
 module.exports.scan = function(params) {
-	  return new Promise(resolve, reject) {
+	  return new Promise(resolve, reject, function() {
 	  	dynamodb.scan(params, function(err, data) {
 	  		if (err) reject(err);
-	  		else resolve(data);s
+	  		else resolve(data);
 	  	});
-	  };
+	  });
 };

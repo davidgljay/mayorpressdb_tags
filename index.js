@@ -1,10 +1,9 @@
 var AlchemyAPI = require('alchemy-api'),
-// Promise = require('promise'), //Lint seems to think that this is already defined??
+Promise = require('promise'),
 format_tags = require('./format_tags'),
 dynamodb = require('./api/dynamo'),
-config = require('./config');
-
-var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
+// config = require('./config'),
+get_releases = quire('./get_releases');var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
 
 /*
 * Takes a stream of press releases and uses IBM's AlchemyAPI to identify their topics an any people mentioned. 
@@ -30,48 +29,53 @@ var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
 	}
 */
 
-//TODO:Scan for 1000 urls without the tag_complete:true property.
 //TODO: After successful completion, set the tag_complete:true property.
 
 
-module.exports.handler = function(event, context) {
-	var promise_array=[];
+get_releases(10)
+	.then(function(releases) {
+		var promise_array=[];
+		for (var i = releases.length - 1; i >= 0; i--) {
+			promise_array.push(
+				//Ping alchemyAPI for the taxonomy
+				Promise.all([
+					get_alchemy(url, 'taxonomy'),
+					get_alchemy(url, 'entities')
+				])
 
-	//Extract URLs from event;
-	for (var i = event.Records.length - 1; i >= 0; i--) {
-		var article_info = event.Records[i].NewImage,
-		url = article_info.url;
+				//Then update the tags table with the results
+				.then(function(results) {
+					var tagged_article = {
+						taxonomy:results[0].taxonomy,
+						entities:results[1].entities,
+						article_info:releases[i]
+					};
+					dynamodb.batch_update(format_tags(article))
+						.then(function() {
+							return tagged_article;
+						});
+				})
 
-		//Delete the body, it doesn't need to be stored, and could wind up taking up a lot of extra space.
-		delete article_info.body;
-		promise_array.push(
-			Promise.all([
-				get_alchemy(url, 'taxonomy'),
-				get_alchemy(url, 'entities')
-			])
-			.then(format_and_post)
-		);
-	}
+				//Then update the article and store the alchemy results, just in case we need them later.
+				.then(function(tagged_article) {
+					return dynamodb.update(get_releases.update_tagged());
+				})
+			);
+		}
 
-	Promise.all(promise_array)
+		Promise.all(promise_array)
 		.then(
 			function(results) {
-				context.succeed(event.Records.length + 'articles AlchemyAPIed and posted to DynamoDB');
+				logger.info(releases.length + 'articles AlchemyAPIed and posted to DynamoDB');
 			}, 
 			function(err) {
-				context.fail(err);
-			});
+				logger.error(err);
+			});		
+	})
 
-};
 
-var format_and_post = function(results) {
-	var article = {
-		taxonomy:results[0].taxonomy,
-		entities:results[1].entities,
-		article_info:event.Records[i].NewImage
-	};
-	return dynamodb.batch_update(format_tags(results));
-};
+
+var format_and_post = ;
 
 
 //Function which returns a promise to deliver a list of tags in an array.
