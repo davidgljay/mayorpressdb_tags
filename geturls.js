@@ -25,7 +25,7 @@ module.exports = function() {
 
 
 //Return params to update a url to tagged = true
-module.exports.update_params = function(url) {
+module.exports.update_tagged = function(url) {
 	return {
 		table:process.env.RELEASE_TABLE,
 		key:{url:{S:url}},
