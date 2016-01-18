@@ -33,7 +33,7 @@ var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
 */
 
 //TODO: After successful completion, set the tag_complete:true property.
-get_releases(1)
+get_releases(process.env.NUMRECORDS)
 	.then(function(releases) {
 		logger.info("Got " + releases.length + " releases");
 		var promise_array=[];
