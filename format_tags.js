@@ -1,9 +1,11 @@
+var logger = require('./utils/logger');
+
 /* 
 * Takes responses from AlchemyApi and formats them in the form:
 * *  {"tag":
 		{
 		"count":1,
-		"articles":[
+		"releases":[
 			{
 				"title":"TITLE",
 				"date:"20160101",
@@ -13,10 +15,10 @@
 		],
 		"person1Name":"Mr. Mayor",
 		person1Details:{}
-		"person1Articles":[],
+		"person1releases":[],
 		"city#Name":"New York",
 		"city#Count:1,
-		"city#Articles":[],
+		"city#releases":[],
 	}
 */
 
@@ -67,53 +69,53 @@ module.exports = function(alchemy_response) {
 			list_append:[]
 		};
 		//Add core tag info
-		var new_tag = {
-			':tag_count':{N:1},
-			':dates':{NN:[alchemy_response.article_info.date]},
-			':articles':{L:[alchemy_response.article_info]},
+		var attrvals = {
+			':tag_count':{N:'1'},
+			':dates':{SS:[alchemy_response.release_info.date]},
+			':releases':{SS:[JSON.stringify(alchemy_response.release_info)]}
 		};
 		update_expression.add.push(':dates');
 		update_expression.add.push(':tag_count');
-		update_expression.list_append.push(':articles');
+		update_expression.add.push(':releases');
 		//Add city info
-		var city = alchemy_response.article_info.city,
+		var city = alchemy_response.release_info.city,
 		city_id = city.replace(' ', '');
-		new_tag[':city_name' + city_id ] = {S:city};
+		attrvals[':city_name' + city_id ] = {S:city};
 		update_expression.set.push(':city_name' + city_id);
 
-		new_tag[':city_articles' + city_id ] = {L:[alchemy_response.article_info]};
-		update_expression.list_append.push(':city_artciles' + city_id);
+		attrvals[':city_releases' + city_id ] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+		update_expression.add.push(':city_releases' + city_id);
 
 		//Add people info
 		for (var j = people_list.length - 1; j >= 0; j--) {
-			var person_id = people_list[j].name.replace(' ','');
-			new_tag[':person_name' + person_id] = {S:people_list[j].name};
+			var person_id = people_list[j].name.replace(/[^a-z0-9]/ig,'_');
+			attrvals[':person_name' + person_id] = {S:people_list[j].name};
 			update_expression.set.push(':person_name' + person_id );
 			if (people_list[j].disambiguated) {
-				new_tag[':person_details' + person_id] = {M:people_list[j].disambiguated};
+				attrvals[':person_details' + person_id] = {M:people_list[j].disambiguated};
 				update_expression.set.push(':person_details' + person_id);
 			}
-			new_tag[':person_articles' + person_id] = {L:[alchemy_response.article_info]};
-			update_expression.list_append.push(':person_articles' + person_id);
+			attrvals[':person_releases' + person_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+			update_expression.add.push(':person_releases' + person_id);
 		}
 
-		//Add cross-tags by city
+		// //Add cross-tags by city
 		for (var k = tag_list.length - 1; k >= 0; k--) {
 			if (k==i) {
 				continue;
 			}
 			var tag_id = "_" + city + "_" + tag_list[k];
-			new_tag[':tag_name' + tag_id] = {S:tag_id};
+			attrvals[':tag_name' + tag_id] = {S:tag_id};
 			update_expression.set.push(':tag_name' + tag_id);
 
-			new_tag[':tag_articles' + tag_id] = {L:[alchemy_response.article_info]};
-			update_expression.list_append.push(':tag_articles' + tag_id);
+			attrvals[':tag_releases' + tag_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+			update_expression.add.push(':tag_releases' + tag_id);
 		}
 
 		tags.push({
-			table:process.env.TAGS_DB,
+			table:process.env.TAGS_TABLE,
 			key:{tag:{S:tag_list[i]}},
-			values:new_tag,
+			attrvalues:attrvals,
 			update_expression:format_update_expression(update_expression)
 		});
 	}
@@ -161,28 +163,35 @@ var get_people_list = module.exports.get_people_list = function(alchemy_entities
 };
 
 var format_update_expression = module.exports.format_update_expression = function(update_expression) {
+	var formatted = '';
+
 	//Add ADD expressions
-	var formatted = 'ADD';
-	for (var i = update_expression.add.length - 1; i >= 0; i--) {
-		formatted += ' ' + update_expression.add[i].slice(1) + ' ' + update_expression.add[i] + ',';
+	if (update_expression.add.length > 0 ) {
+		formatted += 'ADD';
+		for (var i = update_expression.add.length - 1; i >= 0; i--) {
+			formatted += ' ' + update_expression.add[i].slice(1) + ' ' + update_expression.add[i] + ',';
+		}	
+		//Remove trailing comma.	
+		formatted = formatted.slice(0,-1);
 	}
 
-	//Remove trailing comma.
-	formatted = formatted.slice(0,-1);
-	//Add SET expressions
-	formatted += ' SET';
-	for (var j = update_expression.set.length - 1; j >= 0; j--) {
-		formatted += ' ' + update_expression.set[j].slice(1) + '=if_not_exists(' + 
-		update_expression.set[j].slice(1) + ', ' + update_expression.set[j] + '),';
+	if (update_expression.set.length > 0 || update_expression.list_append.length > 0) {
+		//Add SET expressions
+		formatted += ' SET';
+		for (var j = update_expression.set.length - 1; j >= 0; j--) {
+			formatted += ' ' + update_expression.set[j].slice(1) + '=if_not_exists(' + 
+			update_expression.set[j].slice(1) + ', ' + update_expression.set[j] + '),';
+		}
+		//Add list_append expressions
+		for (var k = update_expression.list_append.length - 1; k >= 0; k--) {
+			formatted += ' ' + update_expression.list_append[k].slice(1) + '=if_not_exists(' + 
+			update_expression.list_append[k].slice(1) + ', ' + update_expression.list_append[k] + '), ' +
+			update_expression.list_append[k].slice(1) + '=list_append(' + update_expression.list_append[k] + ', ' +
+			update_expression.list_append[k].slice(1) + '),';
+		}		
+		//Remove trailing comma
+		formatted = formatted.slice(0,-1);
 	}
-	//Add list_append expressions
-	for (var k = update_expression.list_append.length - 1; k >= 0; k--) {
-		formatted += ' ' + update_expression.list_append[k].slice(1) + '=list_append(' + 
-		update_expression.list_append[k].slice(1) + ', ' + update_expression.list_append[k] + '),';
-	}
-
-	//Remove trailing comma
-	formatted = formatted.slice(0,-1);
 
 	return formatted;
 };

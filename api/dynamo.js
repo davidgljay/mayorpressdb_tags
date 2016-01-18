@@ -1,11 +1,12 @@
 var AWS = require('aws-sdk'),
-Promise = require('promise');
+Promise = require('promise'),
+logger = require('../utils/logger');
 
-// AWS.config.update({
-// 	accessKeyId: process.env.AWS_KEY, 
-// 	secretAccessKey: process.env.AWS_SECRET, 
-// 	region: process.env.AWS_REGION
-// })
+AWS.config.update({
+	accessKeyId: process.env.AWS_KEY, 
+	secretAccessKey: process.env.AWS_SECRET, 
+	region: process.env.AWS_REGION
+})
 
 var dynamodb = this.dynamodb = new AWS.DynamoDB({apiVersion: '2015-02-02'});
 
@@ -25,16 +26,20 @@ var get_throttle = function() {
 
 //Updates a single item in DynamoDB. Assumes that integers and arrays are added rather than updated.
 
-module.exports.update = function(item) {
+var update = module.exports.update = function(item) {
 	return new Promise(function(resolve, reject) {
 		setTimeout(function() {
+			// logger.info(item.attrvalues);
+			// logger.info(item.update_expression);
+			// logger.info(item.key)
+			// logger.info(item.table)
 			dynamodb.updateItem({
 				TableName:item.table,
 				Key:item.key,
 				ReturnValues:'NONE',
 				ReturnItemCollectionMetrics:'NONE',
 				ReturnConsumedCapacity: 'NONE',
-				ExpressionAttributeValues: item.values,
+				ExpressionAttributeValues: item.attrvalues,
 				UpdateExpression: item.update_expression
 			},
 			function(err, data) {
@@ -51,7 +56,7 @@ module.exports.update = function(item) {
 module.exports.batch_update = function(items) {
 	var promise_array = [];
 	for (var i = items.length - 1; i >= 0; i--) {
-		promise_array.push(items[i]);
+		promise_array.push(update(items[i]));
 	}
 	return Promise.all(promise_array);
 };
@@ -113,10 +118,16 @@ var put_params = function(items) {
 };
 
 module.exports.scan = function(params) {
+	logger.info("Scanning");
 	  return new Promise(function(resolve, reject) {
 	  	dynamodb.scan(params, function(err, data) {
-	  		if (err) reject(err);
-	  		else resolve(data);
+	  		if (err) {
+	  			logger.error('Error scanning');
+	  			reject(err);
+	  		}
+	  		else {
+	  			resolve(data);
+	  		}
 	  	});
 	  });
 };

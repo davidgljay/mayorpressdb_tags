@@ -1,9 +1,9 @@
-var dynamo = require('./api/dynamo');
+var dynamo = require('./api/dynamo'),
+logger=require('./utils/logger');
 
 //Gets 1000 urls from dynamoDB where tagged = false;
 
 module.exports = function(numurls) {
-	console.log("getting releasees");
 	return dynamo.scan(scan_params(numurls)).then(dedynoify);
 };
 
@@ -18,13 +18,15 @@ var scan_params = module.exports.scan_params =  function(numurls) {
             '#url': 'url',
             '#city': 'city',
             '#date': 'date',
-            '#title': 'title'
+            '#title': 'title',
+            '#hash': 'hash'
         },
-		ProjectionExpression:'#url, #city, #date, #title'
+		ProjectionExpression:'#hash, #url, #city, #date, #title'
 	};
 };
 
 var dedynoify = module.exports.dedynoify = function(results) {
+	logger.info("Dedynoifying " + results.Items.length + " releases");
 	//Remove dynamo formatting from results;
 	var unformatted_results = [];
 	for (var i = 0; i < results.Items.length; i++) {
@@ -39,15 +41,15 @@ var dedynoify = module.exports.dedynoify = function(results) {
 
 
 //Return params to update a url to tagged = true
-module.exports.update_tagged = function(article) {
+module.exports.update_tagged = function(release) {
 	return {
 		table:process.env.RELEASE_TABLE,
-		key:{url:{S:article.article_info.url}},
-		values:{
-			':taxonomy':{S:JSON.stringify(article.taxonomy)},
-			':entities':{S:JSON.stringify(article.entities)}
+		key:{hash:{S:release.release_info.hash}},
+		attrvalues:{
+			':taxonomy':{S:JSON.stringify(release.taxonomy)},
+			':entities':{S:JSON.stringify(release.entities)}
 
 		},
-		update_expression:'SET taxonomy :taxonomy, entities :entities'
+		update_expression:'SET taxonomy=:taxonomy, entities=:entities'
 	};
 };
