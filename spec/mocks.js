@@ -60,7 +60,7 @@ var article = module.exports.article = {
 module.exports.tagged_article = {
 	taxonomy:alchemy_tags,
 	entities:alchemy_entities,
-	article_info:article
+	release_info:article
 };
 
 module.exports.formatted_tags = [{

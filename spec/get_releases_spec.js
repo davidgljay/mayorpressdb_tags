@@ -13,9 +13,10 @@ describe ("Getting releases", function() {
 		            '#url': 'url',
 		            '#city': 'city',
 		            '#date': 'date',
-		            '#title': 'title'
+		            '#title': 'title',
+		            '#hash': 'hash'
 		        },
-				ProjectionExpression:'#url, #city, #date, #title'
+				ProjectionExpression:'#hash, #url, #city, #date, #title'
 			};
 			expect(get_releases.scan_params(123)).toEqual(expected);
 		});

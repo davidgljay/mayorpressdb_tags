@@ -26,7 +26,6 @@ var scan_params = module.exports.scan_params =  function(numurls) {
 };
 
 var dedynoify = module.exports.dedynoify = function(results) {
-	logger.info("Dedynoifying " + results.Items.length + " releases");
 	//Remove dynamo formatting from results;
 	var unformatted_results = [];
 	for (var i = 0; i < results.Items.length; i++) {
