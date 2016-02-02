@@ -11,7 +11,7 @@ AWS.config.update({
 var dynamodb = this.dynamodb = new AWS.DynamoDB({apiVersion: '2015-02-02'});
 
 //Don't post more frequently than X milliseconds;
-var throttle = 100,
+var throttle = 150,
 last_call=0;
 var get_throttle = function() {
 	var current_time = new Date().getTime();
@@ -57,11 +57,13 @@ var update = module.exports.update = function(item) {
 
 module.exports.batch_update = function(items) {
 	logger.info("Batch updating " + items.length + " items.");
-	var promise_array = [];
-	for (var i = items.length - 1; i >= 0; i--) {
-		promise_array.push(update(items[i]));
+	var update_promise = update(items[0]);
+	for (var i = items.length - 1; i >= 1; i--) {
+		update_promise.then(function() {
+			return update(items[i])
+		})
 	}
-	return Promise.all(promise_array);
+	return update_promise;
 };
 //Post up to 25 items to dynamoDB. 
 //TODO: Handle that limitation in this class.
