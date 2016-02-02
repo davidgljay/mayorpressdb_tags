@@ -44,8 +44,10 @@ var update = module.exports.update = function(item) {
 			},
 			function(err, data) {
 				if (err) {
+					logger.error("Error posting:" + err);
 					reject("Error updating DynamoDB:\n" + err);
 				} else {
+					logger.info('Post successful');
 					resolve(data);
 				}
 			});
@@ -54,6 +56,7 @@ var update = module.exports.update = function(item) {
 };
 
 module.exports.batch_update = function(items) {
+	logger.info("Batch updating " + items.length + " items.");
 	var promise_array = [];
 	for (var i = items.length - 1; i >= 0; i--) {
 		promise_array.push(update(items[i]));

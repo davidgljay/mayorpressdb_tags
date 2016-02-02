@@ -70,33 +70,33 @@ module.exports = function(alchemy_response) {
 		};
 		//Add core tag info
 		var attrvals = {
-			':tag_count':{N:'1'},
+			':tag.count':{N:'1'},
 			':dates':{SS:[alchemy_response.release_info.date]},
 			':releases':{SS:[JSON.stringify(alchemy_response.release_info)]}
 		};
 		update_expression.add.push(':dates');
-		update_expression.add.push(':tag_count');
+		update_expression.add.push(':tag.count');
 		update_expression.add.push(':releases');
 		//Add city info
 		var city = alchemy_response.release_info.city,
-		city_id = city.replace(' ', '');
-		attrvals[':city_name' + city_id ] = {S:city};
-		update_expression.set.push(':city_name' + city_id);
+		city_id = city.replace(/[^a-z0-9]/ig,'');
+		attrvals[':city.name' + city_id ] = {S:city};
+		update_expression.set.push(':city.name' + city_id);
 
-		attrvals[':city_releases' + city_id ] = {SS:[JSON.stringify(alchemy_response.release_info)]};
-		update_expression.add.push(':city_releases' + city_id);
+		attrvals[':city.releases' + city_id ] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+		update_expression.add.push(':city.releases' + city_id);
 
 		//Add people info
 		for (var j = people_list.length - 1; j >= 0; j--) {
 			var person_id = people_list[j].name.replace(/[^a-z0-9]/ig,'_');
-			attrvals[':person_name' + person_id] = {S:people_list[j].name};
-			update_expression.set.push(':person_name' + person_id );
+			attrvals[':person.name' + person_id] = {S:people_list[j].name};
+			update_expression.set.push(':person.name' + person_id );
 			if (people_list[j].disambiguated) {
-				attrvals[':person_details' + person_id] = {M:people_list[j].disambiguated};
-				update_expression.set.push(':person_details' + person_id);
+				attrvals[':person.details' + person_id] = {M:people_list[j].disambiguated};
+				update_expression.set.push(':person.details' + person_id);
 			}
-			attrvals[':person_releases' + person_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
-			update_expression.add.push(':person_releases' + person_id);
+			attrvals[':person.releases' + person_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+			update_expression.add.push(':person.releases' + person_id);
 		}
 
 		// //Add cross-tags by city
@@ -104,12 +104,12 @@ module.exports = function(alchemy_response) {
 			if (k==i) {
 				continue;
 			}
-			var tag_id = "_" + city + "_" + tag_list[k];
-			attrvals[':tag_name' + tag_id] = {S:tag_id};
-			update_expression.set.push(':tag_name' + tag_id);
+			var tag_id = "_" + city + "_" + tag_list[k].replace(/[^a-z0-9]/ig,'_');
+			attrvals[':tag.name' + tag_id] = {S:tag_id};
+			update_expression.set.push(':tag.name' + tag_id);
 
-			attrvals[':tag_releases' + tag_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
-			update_expression.add.push(':tag_releases' + tag_id);
+			attrvals[':tag.releases' + tag_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+			update_expression.add.push(':tag.releases' + tag_id);
 		}
 
 		tags.push({
