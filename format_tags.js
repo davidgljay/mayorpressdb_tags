@@ -63,40 +63,52 @@ module.exports = function(alchemy_response) {
 	people_list = get_people_list(alchemy_response.entities),
 	tags = [];
 	for (var i = tag_list.length - 1; i >= 0; i--) {
-		var update_expression = {
-			add:new Set(),
-			set:new Set(),
-			list_append:new Set()
+
+		//Initialize tag object;
+		var tag = {
+			table:process.env.TAGS_TABLE,
+			key:{tag:{S:tag_list[i]}},
+			attrvalues:{
+				':tagCount':{N:'1'},
+				':dates':{SS:[alchemy_response.release_info.date]},
+				':releases':{SS:[JSON.stringify(alchemy_response.release_info)]}
+			},
+			update_expression: {
+				add:new Set(),
+				set:new Set(),
+				list_append:new Set()
+			}
 		};
-		//Add core tag info
-		var attrvals = {
-			':tagCount':{N:'1'},
-			':dates':{SS:[alchemy_response.release_info.date]},
-			':releases':{SS:[JSON.stringify(alchemy_response.release_info)]}
-		};
-		update_expression.add.add(':dates');
-		update_expression.add.add(':tagCount');
-		update_expression.add.add(':releases');
+
+		//Add information about the tag, and start tracking how much info we hve in the updateexpression.
+		tag.update_expression.add.add(':dates');
+		tag.update_expression.add.add(':tagCount');
+		tag.update_expression.add.add(':releases');
+		var updatecount = 3;
+
 		//Add city info
 		var city = alchemy_response.release_info.city,
 		city_id = city.replace(/[^a-z0-9]/ig,'');
-		attrvals[':cityName' + city_id ] = {S:city};
-		update_expression.set.add(':cityName' + city_id);
+		tag.attrvalues[':cityName' + city_id ] = {S:city};
+		tag.update_expression.set.add(':cityName' + city_id);
 
-		attrvals[':cityReleases' + city_id ] = {SS:[JSON.stringify(alchemy_response.release_info)]};
-		update_expression.add.add(':cityReleases' + city_id);
+		tag.attrvalues[':cityReleases' + city_id ] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+		tag.update_expression.add.add(':cityReleases' + city_id);
+		updatecount += 2;
 
 		//Add people info
 		for (var j = people_list.length - 1; j >= 0; j--) {
 			var person_id = people_list[j].name.replace(/[^a-z0-9]/ig,'_');
-			attrvals[':personName' + person_id] = {S:people_list[j].name};
-			update_expression.set.add(':personName' + person_id );
+			tag.attrvalues[':personName' + person_id] = {S:people_list[j].name};
+			tag.update_expression.set.add(':personName' + person_id );
 			if (people_list[j].disambiguated) {
-				attrvals[':personDetails' + person_id] = {M:people_list[j].disambiguated};
-				update_expression.set.add(':personDetails' + person_id);
+				tag.attrvalues[':personDetails' + person_id] = {M:people_list[j].disambiguated};
+				tag.update_expression.set.add(':personDetails' + person_id);
 			}
-			attrvals[':personReleases' + person_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
-			update_expression.add.add(':personReleases' + person_id);
+			tag.attrvalues[':personReleases' + person_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+			tag.update_expression.add.add(':personReleases' + person_id);
+			updatecount += 3;
+			tag = check_tag(tag, updatecount);
 		}
 
 		// //Add cross-tags by city
@@ -105,22 +117,49 @@ module.exports = function(alchemy_response) {
 				continue;
 			}
 			var tag_id = "_" + city + "_" + tag_list[k].replace(/[^a-z0-9]/ig,'_');
-			attrvals[':tagName' + tag_id] = {S:tag_id};
-			update_expression.set.add(':tagName' + tag_id);
+			tag.attrvalues[':tagName' + tag_id] = {S:tag_id};
+			tag.update_expression.set.add(':tagName' + tag_id);
 
-			attrvals[':tagReleases' + tag_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
-			update_expression.add.add(':tagReleases' + tag_id);
+			tag.attrvalues[':tagReleases' + tag_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+			tag.update_expression.add.add(':tagReleases' + tag_id);
+			updatecount += 2;
+			tag = check_tag(tag, updatecount);
 		}
 
-		tags.push({
-			table:process.env.TAGS_TABLE,
-			key:{tag:{S:tag_list[i]}},
-			attrvalues:attrvals,
-			update_expression:format_update_expression(update_expression)
-		});
+		push_tag(tag);
 	}
+
+	//Check to see if the tag has gotten too complex, if so split it into multiple updates.
+	function check_tag(tag, updatecount) {
+		if (updatecount >=100) {
+			push_tag(tag);
+			return clean_tag(tag);
+		} else {
+			return tag;
+		}
+	}
+
+	function clean_tag(tag) {
+		tag.update_expression={
+			add:new Set(),
+			set:new Set(),
+			list_append:new Set()
+		};
+		tag.attrvalues={};
+		return tag;
+	};
+
+
+
+	function push_tag(tag) {
+		tag.update_expression = format_update_expression(tag.update_expression);
+		tags.push(tag);
+	};
+
+
 	return tags;
 };
+
 
 
 //Get list of tags from the Alchemy taxonomy response 
