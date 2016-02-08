@@ -62,6 +62,7 @@ module.exports = function(alchemy_response) {
 	var tag_list = get_tag_list(alchemy_response.taxonomy),
 	people_list = get_people_list(alchemy_response.entities),
 	tags = [];
+	console.log(tag_list);
 	for (var i = tag_list.length - 1; i >= 0; i--) {
 		var update_expression = {
 			add:new Set(),
@@ -126,6 +127,7 @@ module.exports = function(alchemy_response) {
 //Get list of tags from the Alchemy taxonomy response 
 var get_tag_list = module.exports.get_tag_list = function(alchemy_tags) {
 	var tag_list = new Set();
+	if (alchemy_tags==undefined) {alchemy_tags=[];}
 	for (var i = 0; i < alchemy_tags.length ; i++) {
 		if (alchemy_tags[i].confident == 'no') {
 			continue;
@@ -141,6 +143,7 @@ var get_tag_list = module.exports.get_tag_list = function(alchemy_tags) {
 //Get list of people. from Alchemy entities response
 var get_people_list = module.exports.get_people_list = function(alchemy_entities) {
 	var people_list = [];
+	if (alchemy_entities==undefined) {alchemy_entities=[];}
 	for (var i = alchemy_entities.length - 1; i >= 0; i--) {
 		if (alchemy_entities[i].type=="Person") {
 			var name = alchemy_entities[i].text;

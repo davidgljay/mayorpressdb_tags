@@ -84,8 +84,8 @@ get_releases()
 //Function which returns a promise to deliver a list of tags in an array.
 var get_alchemy = function(release, operation) {
 	return new Promise(function(resolve, reject) {
+		console.log(release)
 		alchemy_api[operation](release.url, {}, function(err, result) {
-			delete release.body;
 			if (err) {
 				reject("AlchemyAPI error: " + err);
 			} else if (result.status == "ERROR") {
@@ -95,8 +95,10 @@ var get_alchemy = function(release, operation) {
 						alchemy_result:{},
 						release:release
 					})
+				} else {
+					logger.error(result);
+					reject("AlchemyAPI error: " + result.statusInfo);
 				}
-				reject("AlchemyAPI error: " + result.statusInfo);
 			} else {
 				resolve({
 					alchemy_result:result,
