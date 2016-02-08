@@ -64,39 +64,39 @@ module.exports = function(alchemy_response) {
 	tags = [];
 	for (var i = tag_list.length - 1; i >= 0; i--) {
 		var update_expression = {
-			add:[],
-			set:[],
-			list_append:[]
+			add:new Set(),
+			set:new Set(),
+			list_append:new Set()
 		};
 		//Add core tag info
 		var attrvals = {
-			':tag.count':{N:'1'},
+			':tagCount':{N:'1'},
 			':dates':{SS:[alchemy_response.release_info.date]},
 			':releases':{SS:[JSON.stringify(alchemy_response.release_info)]}
 		};
-		update_expression.add.push(':dates');
-		update_expression.add.push(':tag.count');
-		update_expression.add.push(':releases');
+		update_expression.add.add(':dates');
+		update_expression.add.add(':tagCount');
+		update_expression.add.add(':releases');
 		//Add city info
 		var city = alchemy_response.release_info.city,
 		city_id = city.replace(/[^a-z0-9]/ig,'');
-		attrvals[':city.name' + city_id ] = {S:city};
-		update_expression.set.push(':city.name' + city_id);
+		attrvals[':cityName' + city_id ] = {S:city};
+		update_expression.set.add(':cityName' + city_id);
 
-		attrvals[':city.releases' + city_id ] = {SS:[JSON.stringify(alchemy_response.release_info)]};
-		update_expression.add.push(':city.releases' + city_id);
+		attrvals[':cityReleases' + city_id ] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+		update_expression.add.add(':cityReleases' + city_id);
 
 		//Add people info
 		for (var j = people_list.length - 1; j >= 0; j--) {
 			var person_id = people_list[j].name.replace(/[^a-z0-9]/ig,'_');
-			attrvals[':person.name' + person_id] = {S:people_list[j].name};
-			update_expression.set.push(':person.name' + person_id );
+			attrvals[':personName' + person_id] = {S:people_list[j].name};
+			update_expression.set.add(':personName' + person_id );
 			if (people_list[j].disambiguated) {
-				attrvals[':person.details' + person_id] = {M:people_list[j].disambiguated};
-				update_expression.set.push(':person.details' + person_id);
+				attrvals[':personDetails' + person_id] = {M:people_list[j].disambiguated};
+				update_expression.set.add(':personDetails' + person_id);
 			}
-			attrvals[':person.releases' + person_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
-			update_expression.add.push(':person.releases' + person_id);
+			attrvals[':personReleases' + person_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+			update_expression.add.add(':personReleases' + person_id);
 		}
 
 		// //Add cross-tags by city
@@ -105,11 +105,11 @@ module.exports = function(alchemy_response) {
 				continue;
 			}
 			var tag_id = "_" + city + "_" + tag_list[k].replace(/[^a-z0-9]/ig,'_');
-			attrvals[':tag.name' + tag_id] = {S:tag_id};
-			update_expression.set.push(':tag.name' + tag_id);
+			attrvals[':tagName' + tag_id] = {S:tag_id};
+			update_expression.set.add(':tagName' + tag_id);
 
-			attrvals[':tag.releases' + tag_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
-			update_expression.add.push(':tag.releases' + tag_id);
+			attrvals[':tagReleases' + tag_id] = {SS:[JSON.stringify(alchemy_response.release_info)]};
+			update_expression.add.add(':tagReleases' + tag_id);
 		}
 
 		tags.push({
@@ -166,6 +166,7 @@ var format_update_expression = module.exports.format_update_expression = functio
 	var formatted = '';
 
 	//Add ADD expressions
+	update_expression.add = Array.from(update_expression.add)
 	if (update_expression.add.length > 0 ) {
 		formatted += 'ADD';
 		for (var i = update_expression.add.length - 1; i >= 0; i--) {
@@ -175,6 +176,7 @@ var format_update_expression = module.exports.format_update_expression = functio
 		formatted = formatted.slice(0,-1);
 	}
 
+	update_expression.set = Array.from(update_expression.set)
 	if (update_expression.set.length > 0 || update_expression.list_append.length > 0) {
 		//Add SET expressions
 		formatted += ' SET';
