@@ -88,7 +88,7 @@ module.exports = function(alchemy_response) {
 
 		//Add city info
 		var city = alchemy_response.release_info.city,
-		city_id = city.replace(/[^a-z0-9]/ig,'');
+		city_id = city.replace(/[^a-z0-9]/ig,'_');
 		tag.attrvalues[':cityName' + city_id ] = {S:city};
 		tag.update_expression.set.add(':cityName' + city_id);
 
@@ -116,7 +116,7 @@ module.exports = function(alchemy_response) {
 			if (k==i) {
 				continue;
 			}
-			var tag_id = "_" + city + "_" + tag_list[k].replace(/[^a-z0-9]/ig,'_');
+			var tag_id = "_" + city_id + "_" + tag_list[k].replace(/[^a-z0-9]/ig,'_');
 			tag.attrvalues[':tagName' + tag_id] = {S:tag_id};
 			tag.update_expression.set.add(':tagName' + tag_id);
 
