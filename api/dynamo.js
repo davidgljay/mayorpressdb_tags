@@ -57,6 +57,9 @@ var update = module.exports.update = function(item) {
 
 module.exports.batch_update = function(items) {
 	logger.info("Batch updating " + items.length + " items.");
+	if (items.length===0) {
+		return new Promise(function(resolve) {resolve()});
+	}
 	var update_promise = update(items[0]);
 	for (var i = items.length - 1; i >= 1; i--) {
 		update_promise.then(function() {

@@ -62,7 +62,6 @@ module.exports = function(alchemy_response) {
 	var tag_list = get_tag_list(alchemy_response.taxonomy),
 	people_list = get_people_list(alchemy_response.entities),
 	tags = [];
-	console.log(tag_list);
 	for (var i = tag_list.length - 1; i >= 0; i--) {
 		var update_expression = {
 			add:new Set(),

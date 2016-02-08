@@ -64,6 +64,10 @@ get_releases()
 
 				//Then update the release and store the alchemy results, just in case we need them later.
 				.then(function(completed_release) {
+					if (completed_release.taxonomy === undefined || completed_release.entities === undefined) {
+						logger.error("Failed to get alchemy info for: " + completed_release.release_info.url);
+						return new Promise(function(resolve) {resolve()});
+					}
 					logger.info('Updating completed_release');
 					return dynamodb.update(get_releases.update_tagged(completed_release));
 				})
