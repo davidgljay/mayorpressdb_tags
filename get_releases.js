@@ -7,21 +7,21 @@ module.exports = function(numurls) {
 	return dynamo.scan(scan_params(numurls)).then(dedynoify);
 };
 
-var scan_params = module.exports.scan_params =  function(numurls) {
+var scan_params = module.exports.scan_params =  function() {
 	return {
 		TableName: process.env.RELEASE_TABLE,
 		ConsistentRead: true,
 		FilterExpression: 'attribute_not_exists (taxonomy)',
-		Limit: numurls,
 		ReturnConsumedCapacity: 'NONE',
 		ExpressionAttributeNames: {
             '#url': 'url',
             '#city': 'city',
             '#date': 'date',
             '#title': 'title',
+            '#body': 'body,',
             '#hash': 'hash'
         },
-		ProjectionExpression:'#hash, #url, #city, #date, #title'
+		ProjectionExpression:'#hash, #url, #city, #body, #date, #title'
 	};
 };
 

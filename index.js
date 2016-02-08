@@ -33,9 +33,11 @@ var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
 */
 
 //TODO: After successful completion, set the tag_complete:true property.
-get_releases(process.env.NUMRECORDS)
+get_releases()
 	.then(function(releases) {
 		logger.info("Got " + releases.length + " releases");
+		releases = releases.slice(0,process.env.NUMRECORDS)
+		logger.info("Shortening to " + releases.length + " releases");
 		var promise_array=[];
 		for (var i = 0; i < releases.length ; i++) {
 			promise_array.push(
@@ -72,6 +74,7 @@ get_releases(process.env.NUMRECORDS)
 	})
 	.then(
 		function(results) {
+			logger.info("DONEZO!!!!");
 			logger.info(releases.length + 'releases AlchemyAPIed and posted to DynamoDB');
 		}, 
 		function(err) {
@@ -82,9 +85,17 @@ get_releases(process.env.NUMRECORDS)
 var get_alchemy = function(release, operation) {
 	return new Promise(function(resolve, reject) {
 		alchemy_api[operation](release.url, {}, function(err, result) {
+			delete release.body;
 			if (err) {
 				reject("AlchemyAPI error: " + err);
 			} else if (result.status == "ERROR") {
+				if (result.statusInfo=="page-is-not-html") {
+					//TODO: perform a query for page text and send it to alchemy.
+					resolve({
+						alchemy_result:{},
+						release:release
+					})
+				}
 				reject("AlchemyAPI error: " + result.statusInfo);
 			} else {
 				resolve({
