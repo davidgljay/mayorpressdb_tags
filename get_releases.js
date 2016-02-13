@@ -22,7 +22,7 @@ var scan_params = module.exports.scan_params =  function() {
 	return {
 		TableName: process.env.RELEASE_TABLE,
 		ConsistentRead: true,
-		FilterExpression: 'attribute_not_exists (taxonomy)',
+		FilterExpression: 'attribute_not_exists (tagged)',
 		ReturnConsumedCapacity: 'NONE',
 		ExpressionAttributeNames: {
             '#url': 'url',
@@ -56,7 +56,8 @@ module.exports.update_tagged = function(release) {
 		key:{hash:{S:release.release_info.hash}},
 		attrvalues:{
 			':taxonomy':{S:JSON.stringify(release.taxonomy)},
-			':entities':{S:JSON.stringify(release.entities)}
+			':entities':{S:JSON.stringify(release.entities)},
+			'tagged':{B:'true'}
 
 		},
 		update_expression:'SET taxonomy=:taxonomy, entities=:entities'
