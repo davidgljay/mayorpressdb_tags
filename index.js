@@ -45,11 +45,23 @@ get_releases()
 				new Promise(function(resolve, reject) {
 					if (releases[i].url.splice(-4)=='.pdf') {
 						var params = {
-
+							TableName: process.env.RELEASE_TABLE,
+							ConsistentRead: false,
+							ReturnConsumedCapacity: 'TOTAL',
+							ExpressionAttributeNames: {
+					            '#body': 'body',
+					            '#url': 'url'
+					        },
+					        ExpressionAttributeValues: {
+					             ':url':{S:releases[i].url}
+					        },
+					        IndexName:'url-index',
+					        KeyConditionExpression:'#url=:url',
+							ProjectionExpression:'#body'
 						};
 						return dynamodb.query(params)
 							.then(function(result) {
-								
+								return get_releases.dedynofiy(result.Items[0]);
 							})
 					} else {
 						return releases[i];
@@ -105,7 +117,8 @@ get_releases()
 //Function which returns a promise to deliver a list of tags in an array.
 var get_alchemy = function(release, operation) {
 	return new Promise(function(resolve, reject) {
-		alchemy_api[operation](release.url, {}, function(err, result) {
+		params = releases.body ? release.body : release.url;
+		alchemy_api[operation](params, {}, function(err, result) {
 			if (err) {
 				reject("AlchemyAPI error: " + err);
 			} else if (result.status == "ERROR") {

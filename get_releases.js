@@ -18,6 +18,7 @@ module.exports = function get_releases(lastRelease) {
 		.then(dedynoify);
 };
 
+//TODO: swith to query against the tagged param.
 var scan_params = module.exports.scan_params =  function() {
 	return {
 		TableName: process.env.RELEASE_TABLE,
