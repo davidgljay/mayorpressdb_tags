@@ -41,11 +41,28 @@ get_releases()
 		var promise_array=[];
 		for (var i = 0; i < releases.length ; i++) {
 			promise_array.push(
+				//Get the body of the press release if it's a pdf.
+				new Promise(function(resolve, reject) {
+					if (releases[i].url.splice(-4)=='.pdf') {
+						var params = {
+
+						};
+						return dynamodb.query(params)
+							.then(function(result) {
+								
+							})
+					} else {
+						return releases[i];
+					}
+				})
+
 				//Ping alchemyAPI for the taxonomy
-				Promise.all([
-					get_alchemy(releases[i], 'taxonomies'),
-					get_alchemy(releases[i], 'entities')
-				])
+				.then(function(pressrelease) {
+					Promise.all([
+						get_alchemy(pressrelease, 'taxonomies'),
+						get_alchemy(pressrelease, 'entities')
+					])
+				})
 
 				//Then update the tags table with the results
 				.then(function(results) {

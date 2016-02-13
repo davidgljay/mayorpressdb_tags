@@ -1,10 +1,21 @@
 var dynamo = require('./api/dynamo'),
 logger=require('./utils/logger');
 
-//Gets 1000 urls from dynamoDB where tagged = false;
-
-module.exports = function(numurls) {
-	return dynamo.scan(scan_params(numurls)).then(dedynoify);
+//Get 500 urls that are not yet tagged.
+module.exports = function get_releases(lastRelease) {
+	var params = scan_params(),
+		releases = [];
+	if (lastRelease) {params.ExclusiveStartKey=lastRelease;}
+	return dynamo.scan(scan_params())
+		.then(function (results) {
+			releases.concat(results);
+			if (results.LastEvaluatedKey && releases.length < process.env.NUMRECORDS) {
+				return get_releases(results.LastEvaluatedKey);
+			} else {
+				return releases;
+			}
+		})
+		.then(dedynoify);
 };
 
 var scan_params = module.exports.scan_params =  function() {
@@ -18,10 +29,9 @@ var scan_params = module.exports.scan_params =  function() {
             '#city': 'city',
             '#date': 'date',
             '#title': 'title',
-            '#body': 'body,',
             '#hash': 'hash'
         },
-		ProjectionExpression:'#hash, #url, #city, #body, #date, #title'
+		ProjectionExpression:'#hash, #url, #city, #date, #title'
 	};
 };
 
