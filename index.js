@@ -2,8 +2,8 @@ var AlchemyAPI = require('alchemy-api'),
 Promise = require('promise'),
 format_tags = require('./format_tags'),
 dynamodb = require('./api/dynamo'),
+sns = require('./api/sns'),
 logger = require('./utils/logger'),
-// config = require('./config'),
 get_releases = require('./get_releases');
 
 var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
@@ -109,6 +109,7 @@ get_releases()
 		function(results) {
 			logger.info("DONEZO!!!!");
 			logger.info(releases.length + 'releases AlchemyAPIed and posted to DynamoDB');
+			return sns(JSON.stringify({task:"mayorsdb_maps"}),"arn:aws:sns:us-east-1:663987893806:mayorsdb_starttask");
 		}, 
 		function(err) {
 			logger.error('Got me an error:\n' + err);
