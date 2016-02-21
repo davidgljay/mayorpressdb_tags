@@ -133,6 +133,8 @@ var get_alchemy = function(release, operation) {
 					alchemy_result:result,
 					release:release
 					});
+				//Exit the process on an error.
+				process.exit(1);
 			}
 		});
 	});
