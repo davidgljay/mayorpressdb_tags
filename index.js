@@ -123,15 +123,11 @@ var get_alchemy = function(release, operation) {
 			if (err) {
 				reject("AlchemyAPI error: " + err);
 			} else if (result.status == "ERROR") {
-				if (result.statusInfo=="page-is-not-html" || result.statusInfo == "cannot-retrieve") {
-					//TODO: perform a query for page text and send it to alchemy.
-					resolve({
-						alchemy_result:{},
-						release:release
-					})
-				} else {
-					reject("AlchemyAPI error: " + result.statusInfo);
-				}
+				logger.error("Recieved AlchemyAPI error:" + result.statusInfo);
+				resolve({
+					alchemy_result:{},
+					release:release
+				})
 			} else {
 				resolve({
 					alchemy_result:result,

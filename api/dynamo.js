@@ -30,7 +30,7 @@ var update = module.exports.update = function(item) {
 	return new Promise(function(resolve, reject) {
 		setTimeout(function() {
 			// logger.info(item.attrvalues);
-			logger.info(item.update_expression);
+			// logger.info(item.update_expression);
 			// logger.info(item.key)
 			// logger.info(item.table)
 			dynamodb.updateItem({
@@ -126,7 +126,6 @@ var put_params = function(items) {
 };
 
 module.exports.scan = function(params) {
-	logger.info("Scanning");
 	  return new Promise(function(resolve, reject) {
 	  	dynamodb.scan(params, function(err, data) {
 	  		if (err) {
