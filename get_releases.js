@@ -3,6 +3,7 @@ logger=require('./utils/logger');
 
 //Get 500 urls that are not yet tagged.
 module.exports = function get_releases(lastRelease) {
+	logger.info("Getting a batch of releases");
 	var params = scan_params(),
 		releases = [];
 	if (lastRelease) {params.ExclusiveStartKey=lastRelease;}

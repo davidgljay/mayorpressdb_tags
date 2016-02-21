@@ -32,7 +32,7 @@ var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
 	}
 */
 
-//TODO: After successful completion, set the tag_complete:true property.
+logger.info("Starting tagging process");
 get_releases()
 	.then(function(releases) {
 		logger.info("Got " + releases.length + " releases");
@@ -113,6 +113,7 @@ get_releases()
 		}, 
 		function(err) {
 			logger.error('Got me an error:\n' + err);
+			process.exit(1);
 	});
 
 //Function which returns a promise to deliver a list of tags in an array.
