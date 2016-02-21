@@ -3,12 +3,13 @@ logger=require('./utils/logger');
 
 //Get 500 urls that are not yet tagged.
 module.exports = function get_releases(lastRelease) {
-	logger.info("Getting a batch of releases");
+	logger.info("Getting a batch of releases, starting at: " + lastRelease);
 	var params = scan_params(),
 		releases = [];
 	if (lastRelease) {params.ExclusiveStartKey=lastRelease;}
 	return dynamo.scan(scan_params())
 		.then(function (results) {
+			logger.info("Got " + results.length + "results from scan.");
 			releases.concat(results);
 			if (results.LastEvaluatedKey && releases.length < process.env.NUMRECORDS) {
 				return get_releases(results.LastEvaluatedKey);

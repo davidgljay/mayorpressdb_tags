@@ -126,10 +126,8 @@ var put_params = function(items) {
 };
 
 module.exports.scan = function(params) {
-	logger.info("Scanning");
 	  return new Promise(function(resolve, reject) {
 	  	dynamodb.scan(params, function(err, data) {
-	  		logger.info("scan result");
 	  		if (err) {
 	  			logger.error('Error scanning');
 	  			reject(err);
