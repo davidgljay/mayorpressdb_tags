@@ -24,6 +24,8 @@ var get_throttle = function() {
 	}
 };
 
+//TODO: Add query
+
 //Updates a single item in DynamoDB. Assumes that integers and arrays are added rather than updated.
 
 var update = module.exports.update = function(item) {
@@ -125,6 +127,20 @@ var put_params = function(items) {
 
 };
 
+module.exports.query = function(params) {
+	return new Promise(function(resolve, reject) {
+		dynamodb.query(params, function(err, data) {
+			if (err) {
+				logger.error('Error in query');
+				reject(err);
+			} else {
+				logger.info("Got query result");
+				resolve(data);
+			}
+		});
+	});
+}
+
 module.exports.scan = function(params) {
 	  return new Promise(function(resolve, reject) {
 	  	dynamodb.scan(params, function(err, data) {
@@ -139,3 +155,4 @@ module.exports.scan = function(params) {
 	  	});
 	  });
 };
+

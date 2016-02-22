@@ -43,34 +43,36 @@ get_releases()
 			promise_array.push(
 				//Get the body of the press release if it's a pdf.
 				new Promise(function(resolve, reject) {
-					if (releases[i].url.splice(-4)=='.pdf') {
+					if (releases[i].url.slice(-4)=='.pdf') {
 						var params = {
 							TableName: process.env.RELEASE_TABLE,
 							ConsistentRead: false,
 							ReturnConsumedCapacity: 'TOTAL',
 							ExpressionAttributeNames: {
-					            '#body': 'body',
 					            '#url': 'url'
 					        },
 					        ExpressionAttributeValues: {
 					             ':url':{S:releases[i].url}
 					        },
 					        IndexName:'url-index',
-					        KeyConditionExpression:'#url=:url',
-							ProjectionExpression:'#body'
+					        KeyConditionExpression:'#url=:url'
 						};
-						return dynamodb.query(params)
+						resolve(dynamodb.query(params)
 							.then(function(result) {
-								return get_releases.dedynofiy(result.Items[0]);
+								logger.info(result);
+								return get_releases.dedynoify([result.Items[0]])[0];
+							}, function(err) {
+								reject(err);
 							})
+						)
 					} else {
-						return releases[i];
+						resolve(releases[i]);
 					}
 				})
 
 				//Ping alchemyAPI for the taxonomy
 				.then(function(pressrelease) {
-					Promise.all([
+					return Promise.all([
 						get_alchemy(pressrelease, 'taxonomies'),
 						get_alchemy(pressrelease, 'entities')
 					])
@@ -112,14 +114,14 @@ get_releases()
 			return sns(JSON.stringify({task:"mayorsdb_maps"}),"arn:aws:sns:us-east-1:663987893806:mayorsdb_starttask");
 		}, 
 		function(err) {
-			logger.error('Got me an error:\n' + err);
+			logger.error('Error in tag container:\n' + err, err.stack);
 			process.exit(1);
 	});
 
 //Function which returns a promise to deliver a list of tags in an array.
 var get_alchemy = function(release, operation) {
 	return new Promise(function(resolve, reject) {
-		params = releases.body ? release.body : release.url;
+		params = release.body != undefined ? release.body : release.url;
 		alchemy_api[operation](params, {}, function(err, result) {
 			if (err) {
 				reject("AlchemyAPI error: " + err);
@@ -134,8 +136,6 @@ var get_alchemy = function(release, operation) {
 					alchemy_result:result,
 					release:release
 					});
-				//Exit the process on an error.
-				process.exit(1);
 			}
 		});
 	});
