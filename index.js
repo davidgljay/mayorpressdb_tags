@@ -43,7 +43,7 @@ get_releases()
 			promise_array.push(
 				//Get the body of the press release if it's a pdf.
 				new Promise(function(resolve, reject) {
-					if (releases[i].url.slice(-4)=='.pdf') {
+					if (releases[i].url && releases[i].url.slice(-4)=='.pdf') {
 						var params = {
 							TableName: process.env.RELEASE_TABLE,
 							ConsistentRead: false,
