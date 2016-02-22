@@ -54,7 +54,6 @@ get_releases()
 					        ExpressionAttributeValues: {
 					             ':url':{S:releases[i].url}
 					        },
-					        IndexName:'url-index',
 					        KeyConditionExpression:'#url=:url'
 						};
 						resolve(dynamodb.query(params)
