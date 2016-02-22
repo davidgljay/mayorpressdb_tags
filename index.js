@@ -115,7 +115,9 @@ get_releases()
 		}, 
 		function(err) {
 			logger.error('Error in tag container:\n' + err, err.stack);
-			process.exit(1);
+			setTimeout(function() {
+				process.exit(1);
+			},1000);			
 	});
 
 //Function which returns a promise to deliver a list of tags in an array.
