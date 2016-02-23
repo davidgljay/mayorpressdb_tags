@@ -153,7 +153,9 @@ module.exports = function(alchemy_response) {
 
 	function push_tag(tag) {
 		tag.update_expression = format_update_expression(tag.update_expression);
-		tags.push(tag);
+		if (Object.keys(tag.attrvalues).length > 0 && tag.update_expression.length > 0) {
+			tags.push(tag);
+		}
 	};
 
 

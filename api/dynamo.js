@@ -35,6 +35,10 @@ var update = module.exports.update = function(item) {
 			// logger.info(item.update_expression);
 			// logger.info(item.key)
 			// logger.info(item.table)
+			if (!item.attrvalues || !item.update_expression) {
+				logger.info("Not enough information to post.");
+				resolve();
+			}
 			dynamodb.updateItem({
 				TableName:item.table,
 				Key:item.key,
@@ -46,7 +50,6 @@ var update = module.exports.update = function(item) {
 			},
 			function(err, data) {
 				if (err) {
-					logger.error("Error posting:" + err);
 					reject("Error updating DynamoDB:\n" + err);
 				} else {
 					logger.info('Post successful');
