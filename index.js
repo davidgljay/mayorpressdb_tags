@@ -109,14 +109,16 @@ get_releases()
 	.then(
 		function(results) {
 			logger.info("DONEZO!!!!");
-			logger.info(releases.length + 'releases AlchemyAPIed and posted to DynamoDB');
-			return sns(JSON.stringify({task:"mayorsdb_maps"}),"arn:aws:sns:us-east-1:663987893806:mayorsdb_starttask");
-		}, 
-		function(err) {
-			logger.error('Error in tag container:\n' + err, err.stack);
+			sns(JSON.stringify({task:"mayorsdb_maps"}),"arn:aws:sns:us-east-1:663987893806:mayorsdb_starttask");
 			setTimeout(function() {
 				process.exit(1);
-			},1000);			
+			},60000);	
+		}, 
+		function(err) {
+			logger.info('Error in tag container:\n' + err, err.stack);
+			setTimeout(function() {
+				process.exit(1);
+			},10000);			
 	});
 
 //Function which returns a promise to deliver a list of tags in an array.

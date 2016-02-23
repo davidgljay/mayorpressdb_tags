@@ -58,7 +58,7 @@ var dedynoify = module.exports.dedynoify = function(results) {
 module.exports.update_tagged = function(release) {
 	return {
 		table:process.env.RELEASE_TABLE,
-		key:{hash:{S:release.release_info.hash}},
+		key:{url:{S:release.release_info.url}},
 		attrvalues:{
 			':taxonomy':{S:JSON.stringify(release.taxonomy)},
 			':entities':{S:JSON.stringify(release.entities)},
