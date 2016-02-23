@@ -16,10 +16,9 @@ module.exports = function get_releases(lastRelease) {
 			if (results.LastEvaluatedKey && releases.length < process.env.NUMRECORDS) {
 				return get_releases(results.LastEvaluatedKey);
 			} else {
-				return releases;
+				return dedynoify(releases);
 			}
-		})
-		.then(dedynoify);
+		});
 };
 
 //TODO: swith to query against the tagged param.
@@ -41,10 +40,11 @@ var scan_params = module.exports.scan_params =  function() {
 };
 
 var dedynoify = module.exports.dedynoify = function(results) {
+	logger.info("Running dedynoify");
 	//Remove dynamo formatting from results;
 	var unformatted_results = [];
 	for (var i = 0; i < results.length; i++) {
-		var unformatted_result = {};
+		var unformatted_result = {};	
 		for (var key in results[i]) {
 			unformatted_result[key] = results[i][key].S;
 		}
