@@ -109,10 +109,17 @@ get_releases()
 	.then(
 		function(results) {
 			logger.info("DONEZO!!!!");
-			sns(JSON.stringify({task:"mayorsdb_maps"}),"arn:aws:sns:us-east-1:663987893806:mayorsdb_starttask");
-			setTimeout(function() {
-				process.exit(1);
-			},60000);	
+			sns(JSON.stringify({task:"mayorsdb_maps"}),"arn:aws:sns:us-east-1:663987893806:mayorsdb_starttask").then(
+				function() {
+					setTimeout(function() {
+						process.exit(1);
+					},60000);					
+				}, function() {
+					logger.info("Error posting SNS")
+					setTimeout(function() {
+						process.exit(1);
+					},10000);	
+				})
 		}, 
 		function(err) {
 			logger.info('Error in tag container:\n' + err, err.stack);
