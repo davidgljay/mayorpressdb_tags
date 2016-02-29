@@ -131,7 +131,7 @@ module.exports = function(alchemy_response) {
 
 	//Check to see if the tag has gotten too complex, if so split it into multiple updates.
 	function check_tag(tag, updatecount) {
-		if (updatecount >=100) {
+		if (updatecount >=50) {
 			push_tag(tag);
 			return clean_tag(tag);
 		} else {

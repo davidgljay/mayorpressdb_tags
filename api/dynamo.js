@@ -137,7 +137,6 @@ module.exports.query = function(params) {
 				logger.error('Error in query');
 				reject(err);
 			} else {
-				logger.info("Got query result");
 				resolve(data);
 			}
 		});
