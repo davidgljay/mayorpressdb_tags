@@ -133,6 +133,7 @@ module.exports = function(alchemy_response) {
 	function check_tag(tag, updatecount) {
 		if (updatecount >=50) {
 			push_tag(tag);
+			updatecount = 0;
 			return clean_tag(tag);
 		} else {
 			return tag;
