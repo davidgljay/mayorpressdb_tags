@@ -11,7 +11,7 @@ AWS.config.update({
 var dynamodb = this.dynamodb = new AWS.DynamoDB({apiVersion: '2015-02-02'});
 
 //Don't post more frequently than X milliseconds;
-var throttle = 150,
+var throttle = 200,
 last_call=0;
 var get_throttle = function() {
 	var current_time = new Date().getTime();
@@ -38,6 +38,7 @@ var update = module.exports.update = function(item) {
 			if (!item.attrvalues || !item.update_expression) {
 				logger.info("Not enough information to post.");
 				resolve();
+				return
 			}
 			dynamodb.updateItem({
 				TableName:item.table,
