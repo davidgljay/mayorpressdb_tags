@@ -56,19 +56,20 @@ var logger = require('./utils/logger');
 * Each word for which "confident" is not marked "no" should be included as a tag.
 */
 module.exports = function(alchemy_response) {
-	var tags = [];
+	var tags = [],
+	tag_list = get_tag_list(alchemy_response.taxonomy),
+	people_list = get_people_list(alchemy_response.entities);
 	for (var i = tag_list.length - 1; i >= 0; i--) {
 
 		var release = alchemy_response.release_info;
-		release.tags = get_tag_list(alchemy_response.taxonomy);
-		release.people = get_people_list(alchemy_response.entities);
+		release.tags = tag_list;
+		release.people = people_list;
 
 		//Initialize tag object;
 		var tag = {
 			table:process.env.TAGS_TABLE,
 			key:{tag:{S:tag_list[i]}},
 			attrvalues:{
-				':tagCount':{N:'1'},
 				':dates':{SS:[alchemy_response.release_info.date]},
 				':releases':{SS:[JSON.stringify(release)]}
 			},
@@ -81,11 +82,9 @@ module.exports = function(alchemy_response) {
 
 
 
-		// //Add information about the tag, and start tracking how much info we hve in the updateexpression.
-		// tag.update_expression.add.add(':dates');
-		// tag.update_expression.add.add(':tagCount');
-		// tag.update_expression.add.add(':releases');
-		// var updatecount = 3;
+		//Add information about the tag, and start tracking how much info we hve in the updateexpression.
+		tag.update_expression.add.add(':dates');
+		tag.update_expression.add.add(':releases');
 
 		// //Add city info
 		// var city = alchemy_response.release_info.city,
@@ -131,25 +130,25 @@ module.exports = function(alchemy_response) {
 	}
 
 	//Check to see if the tag has gotten too complex, if so split it into multiple updates.
-	function check_tag(tag, updatecount) {
-		if (updatecount >=50) {
-			push_tag(tag);
-			updatecount = 0;
-			return clean_tag(tag);
-		} else {
-			return tag;
-		}
-	}
+	// function check_tag(tag, updatecount) {
+	// 	if (updatecount >=50) {
+	// 		push_tag(tag);
+	// 		updatecount = 0;
+	// 		return clean_tag(tag);
+	// 	} else {
+	// 		return tag;
+	// 	}
+	// }
 
-	function clean_tag(tag) {
-		tag.update_expression={
-			add:new Set(),
-			set:new Set(),
-			list_append:new Set()
-		};
-		tag.attrvalues={};
-		return tag;
-	};
+	// function clean_tag(tag) {
+	// 	tag.update_expression={
+	// 		add:new Set(),
+	// 		set:new Set(),
+	// 		list_append:new Set()
+	// 	};
+	// 	tag.attrvalues={};
+	// 	return tag;
+	// };
 
 
 
@@ -175,9 +174,7 @@ var get_tag_list = module.exports.get_tag_list = function(alchemy_tags) {
 			continue;
 		}
 		var labels = alchemy_tags[i].label.split('/').slice(1);
-		for (var j = labels.length - 1; j >= 0; j--) {
-			tag_list.add(labels[j]);
-		}
+		tag_list.add(labels[labels.length-1]);
 	}
 	return Array.from(tag_list);
 };
