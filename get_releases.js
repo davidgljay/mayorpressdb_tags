@@ -23,10 +23,11 @@ module.exports = function get_releases(lastRelease) {
 
 //TODO: swith to query against the tagged param.
 var scan_params = module.exports.scan_params =  function() {
+	var filterexpression = process.env.RESTORE_SAVED_RELEASES ? 'attribute_exists (tagged)' : 'attribute_not_exists (tagged)'
 	return {
 		TableName: process.env.RELEASE_TABLE,
 		ConsistentRead: true,
-		FilterExpression: 'attribute_not_exists (tagged)',
+		FilterExpression: filterexpression,
 		ReturnConsumedCapacity: 'NONE',
 		ExpressionAttributeNames: {
             '#url': 'url',
