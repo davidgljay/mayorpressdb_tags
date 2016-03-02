@@ -39,7 +39,7 @@ if (process.env.RESTORE_SAVED_RELEASES) {
 get_releases()
 	.then(function(releases) {
 		logger.info("Got " + releases.length + " releases");
-		if (process.env.RESTORE_SAVED_RELEASES) {	
+		if (process.env.RESTORE_SAVED_RELEASES) {
 			return reload_releases(0, releases);
 		} else {
 			releases = releases.slice(0,process.env.NUMRECORDS)
@@ -73,7 +73,6 @@ var get_release_tags = function(i, releases) {
 	//Get the body of the press release if it's a pdf.
 	return new Promise(function(resolve, reject) {
 		var release = releases[i];
-		console.log(release);
 		if (release.url && release.url.slice(-4)=='.pdf') {
 			var params = {
 				TableName: process.env.RELEASE_TABLE,
@@ -136,23 +135,31 @@ var get_release_tags = function(i, releases) {
 		if (i<releases.length-1) {
 			return get_release_tags(i+1, releases)
 		}
-	})
+	});
 }
 
+//Reload previously saved releases
 var reload_releases = function(i, releases) {
-	return new Promise(function(resolve, reject) {
-		var tagged_release = {
-			taxonomy:releases[i].taxonomy,
-			entities:releases[i].entities,
-			release_info:releases[i]
-		};
-		return dynamodb.batch_update(format_tags(tagged_release))
-			.then(function() {
-				if (i<releases.length-1) {
-					return reload_releases(i+1, releases)
-				}
-			});
-	})
+	var simple_release = {
+			url: releases[i].url,
+            city: releases[i].city,
+            date: releases[i].date,
+            title: releases[i].title,
+            hash: releases[i].hash
+	},
+	tagged_release = {
+		taxonomy:JSON.parse(releases[i].taxonomy),
+		entities:JSON.parse(releases[i].entities),
+		release_info:simple_release
+	};
+	return dynamodb.batch_update(format_tags(tagged_release))
+		.then(function() {
+			if (i<releases.length-1) {
+				return reload_releases(i+1, releases)
+			} else {
+				logger.info("Done reloading releases");
+			}
+		});
 }
 
 //Function which returns a promise to deliver a list of tags in an array.
