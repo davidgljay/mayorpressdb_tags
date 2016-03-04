@@ -33,18 +33,23 @@ var alchemy_api = new AlchemyAPI(process.env.ALCHEMY_API_KEY);
 */
 
 logger.info("Starting tagging process");
-
+if (process.env.RESTORE_SAVED_RELEASES) {
+	logger.info("Restoring saved releases");
+}
 get_releases()
 	.then(function(releases) {
 		logger.info("Got " + releases.length + " releases");
-		releases = releases.slice(0,process.env.NUMRECORDS)
-		logger.info("Shortening to " + releases.length + " releases");
-		//Start a chain of promises with an empty promise
-		return get_release_tags(0, releases);
+		if (process.env.RESTORE_SAVED_RELEASES) {
+			return reload_releases(0, releases);
+		} else {
+			releases = releases.slice(0,process.env.NUMRECORDS)
+			logger.info("Shortening to " + releases.length + " releases");
+			return get_release_tags(0, releases);		
+		}
 	})
 	.then(
 		function() {
-			logger.info("DONEZO!!!!");
+			logger.info("Tagging complete");
 			sns(JSON.stringify({task:"mayorsdb_maps"}),"arn:aws:sns:us-east-1:663987893806:mayorsdb_starttask").then(
 				function() {
 					setTimeout(function() {
@@ -68,7 +73,6 @@ var get_release_tags = function(i, releases) {
 	//Get the body of the press release if it's a pdf.
 	return new Promise(function(resolve, reject) {
 		var release = releases[i];
-		console.log(release);
 		if (release.url && release.url.slice(-4)=='.pdf') {
 			var params = {
 				TableName: process.env.RELEASE_TABLE,
@@ -130,8 +134,32 @@ var get_release_tags = function(i, releases) {
 	.then(function() {
 		if (i<releases.length-1) {
 			return get_release_tags(i+1, releases)
-		};
-	})
+		}
+	});
+}
+
+//Reload previously saved releases
+var reload_releases = function(i, releases) {
+	var simple_release = {
+			url: releases[i].url,
+            city: releases[i].city,
+            date: releases[i].date,
+            title: releases[i].title,
+            hash: releases[i].hash
+	},
+	tagged_release = {
+		taxonomy:JSON.parse(releases[i].taxonomy),
+		entities:JSON.parse(releases[i].entities),
+		release_info:simple_release
+	};
+	return dynamodb.batch_update(format_tags(tagged_release))
+		.then(function() {
+			if (i<releases.length-1) {
+				return reload_releases(i+1, releases)
+			} else {
+				logger.info("Done reloading releases");
+			}
+		});
 }
 
 //Function which returns a promise to deliver a list of tags in an array.

@@ -13,7 +13,8 @@ module.exports = function get_releases(lastRelease) {
 		.then(function (results) {
 			releases = releases.concat(results.Items);
 			logger.info("Got " + results.Items.length + " results from scan, total " + releases.length + ".");
-			if (results.LastEvaluatedKey && releases.length < process.env.NUMRECORDS) {
+
+			if (results.LastEvaluatedKey && (releases.length < process.env.NUMRECORDS || process.env.RESTORE_SAVED_RELEASES)) {
 				return get_releases(results.LastEvaluatedKey);
 			} else {
 				return dedynoify(releases);
@@ -23,20 +24,39 @@ module.exports = function get_releases(lastRelease) {
 
 //TODO: swith to query against the tagged param.
 var scan_params = module.exports.scan_params =  function() {
-	return {
-		TableName: process.env.RELEASE_TABLE,
-		ConsistentRead: true,
-		FilterExpression: 'attribute_not_exists (tagged)',
-		ReturnConsumedCapacity: 'NONE',
-		ExpressionAttributeNames: {
-            '#url': 'url',
-            '#city': 'city',
-            '#date': 'date',
-            '#title': 'title',
-            '#hash': 'hash'
-        },
-		ProjectionExpression:'#hash, #url, #city, #date, #title'
-	};
+	if (process.env.RESTORE_SAVED_RELEASES) {
+		return {
+			TableName: process.env.RELEASE_TABLE,
+			ConsistentRead: true,
+			FilterExpression: 'attribute_exists (tagged)',
+			ReturnConsumedCapacity: 'NONE',
+			ExpressionAttributeNames: {
+	            '#url': 'url',
+	            '#city': 'city',
+	            '#date': 'date',
+	            '#title': 'title',
+	            '#hash': 'hash',
+	            '#taxonomy': 'taxonomy',
+	            '#entities': 'entities'
+	        },
+			ProjectionExpression:'#hash, #url, #city, #date, #title, #taxonomy, #entities'
+		};
+	} else {
+		return {
+			TableName: process.env.RELEASE_TABLE,
+			ConsistentRead: true,
+			FilterExpression: 'attribute_not_exists (tagged)',
+			ReturnConsumedCapacity: 'NONE',
+			ExpressionAttributeNames: {
+	            '#url': 'url',
+	            '#city': 'city',
+	            '#date': 'date',
+	            '#title': 'title',
+	            '#hash': 'hash'
+	        },
+			ProjectionExpression:'#hash, #url, #city, #date, #title'
+		};
+	}
 };
 
 var dedynoify = module.exports.dedynoify = function(results) {
