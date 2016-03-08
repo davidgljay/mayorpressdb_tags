@@ -73,7 +73,8 @@ var get_release_tags = function(i, releases) {
 	//Get the body of the press release if it's a pdf.
 	return new Promise(function(resolve, reject) {
 		var release = releases[i];
-		if (release.url && release.url.slice(-4)=='.pdf') {
+		//Temporarily switching to always send the body that I've extracted. This seems to prevent some errors that Alchemy has getting the urls.
+		if (true) {//(release.url && /\.pdf/i.exec(release.url) || /sanjoseinfo\.org/i.exec(release.url)) {
 			var params = {
 				TableName: process.env.RELEASE_TABLE,
 				ConsistentRead: false,
