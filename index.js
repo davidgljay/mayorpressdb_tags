@@ -40,6 +40,7 @@ get_releases()
 	.then(function(releases) {
 		logger.info("Got " + releases.length + " releases");
 		if (process.env.RESTORE_SAVED_RELEASES) {
+			logger.info("Reloading " + releases.length + " releases.");
 			return reload_releases(0, releases);
 		} else {
 			releases = releases.slice(0,process.env.NUMRECORDS)

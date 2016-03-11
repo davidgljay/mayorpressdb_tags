@@ -11,7 +11,7 @@ AWS.config.update({
 var dynamodb = this.dynamodb = new AWS.DynamoDB({apiVersion: '2015-02-02'});
 
 //Don't post more frequently than X milliseconds;
-var throttle = 200,
+var throttle = 600,
 last_call=0;
 var get_throttle = function() {
 	var current_time = new Date().getTime();
