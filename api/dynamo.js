@@ -40,6 +40,7 @@ var update = module.exports.update = function(item) {
 				resolve();
 				return
 			}
+			logger.info("Updating " + item.key)
 			dynamodb.updateItem({
 				TableName:item.table,
 				Key:item.key,
