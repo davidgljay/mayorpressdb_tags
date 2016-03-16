@@ -65,6 +65,8 @@ module.exports = function(alchemy_response) {
 		release.tags = tag_list;
 		release.people = people_list;
 
+		delete release.body;
+
 		//Initialize tag object;
 		var tag = {
 			table:process.env.TAGS_TABLE,
