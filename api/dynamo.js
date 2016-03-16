@@ -33,14 +33,14 @@ var update = module.exports.update = function(item) {
 		setTimeout(function() {
 			// logger.info(item.attrvalues);
 			// logger.info(item.update_expression);
-			// logger.info(item.key)
+			//logger.info(item.key)
 			// logger.info(item.table)
 			if (!item.attrvalues || !item.update_expression) {
 				logger.info("Not enough information to post.");
 				resolve();
 				return
 			}
-			logger.info("Updating " + item.key.S)
+			logger.info("Updating: " + JSON.stringify(item.key))
 			dynamodb.updateItem({
 				TableName:item.table,
 				Key:item.key,
