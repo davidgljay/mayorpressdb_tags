@@ -51,24 +51,26 @@ get_releases()
 	.then(
 		function() {
 			logger.info("Tagging complete");
-			sns(JSON.stringify({task:"mayorsdb_maps"}),"arn:aws:sns:us-east-1:663987893806:mayorsdb_starttask").then(
-				function() {
-					setTimeout(function() {
-						process.exit(1);
-					},60000);					
-				}, function() {
-					logger.info("Error posting SNS")
-					setTimeout(function() {
-						process.exit(1);
-					},10000);	
-				})
+			triggernext();
 		}, 
 		function(err) {
 			logger.info('Error in tag container:\n' + err, err.stack);
+			triggernext();			
+	});
+
+var triggernext = function() {
+	sns(JSON.stringify({task:"mayorsdb_maps"}),"arn:aws:sns:us-east-1:663987893806:mayorsdb_starttask").then(
+		function() {
 			setTimeout(function() {
 				process.exit(1);
-			},10000);			
-	});
+			},60000);					
+		}, function() {
+			logger.info("Error posting SNS")
+			setTimeout(function() {
+				process.exit(1);
+			},10000);	
+		})
+}
 
 var get_release_tags = function(i, releases) {
 	//Get the body of the press release if it's a pdf.
